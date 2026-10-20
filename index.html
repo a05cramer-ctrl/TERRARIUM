@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TERRARIUM</title>
+<meta name="description" content="Every holder hatches. Paste any pump.fun coin and watch its real holders live in one tank.">
+<meta name="theme-color" content="#08090a">
+<meta property="og:title" content="TERRARIUM">
+<meta property="og:description" content="Every holder hatches. Paste any pump.fun coin and watch its real holders live in one tank.">
+<meta property="og:image" content="og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="og.jpg">
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Instrument+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+/* Layout: one living tank fills the first screen; a slim field guide and the token sit below. */
+:root{
+  --bg:#08090a; --p1:#0f1210; --p2:#151a15; --ln:#222a20; --ln2:#33402e;
+  --tx:#efe9d8; --t2:#bdb8a6; --mu:#7f8a76; --fa:#4c5547;
+  --lime:#b8ff3d; --lime2:#e3ff9e; --moss:#2f5a1c; --egg:#f1ead6;
+  --display:"Jersey 10","Silkscreen",ui-monospace,monospace;
+  --body:"Instrument Sans",system-ui,sans-serif; --mono:"DM Mono",ui-monospace,monospace;
+  --ease:cubic-bezier(.2,.75,.2,1); color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html,body{overflow-x:clip}
+body{background:var(--bg);color:var(--tx);font:500 15px/1.55 var(--body);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button,input{font:inherit;color:inherit}
+::selection{background:var(--lime);color:#0a0f02}
+
+/* top bar */
+.bar{position:fixed;inset:0 0 auto 0;z-index:30;display:flex;align-items:center;gap:14px;padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));pointer-events:none}
+.bar>*{pointer-events:auto}
+.brand{display:flex;align-items:center;gap:10px;font:400 30px/1 var(--display);letter-spacing:.04em}
+.brand img{width:34px;height:34px;border-radius:8px;image-rendering:pixelated}
+.paste{flex:1;max-width:520px;margin-left:auto;display:flex;align-items:center;height:44px;padding:0 4px 0 14px;border-radius:12px;background:#0b0d0bcc;border:1px solid var(--ln2);backdrop-filter:blur(8px)}
+.paste:focus-within{border-color:var(--lime);box-shadow:0 0 0 4px #b8ff3d1f}
+.paste span{font:500 13px var(--mono);color:var(--fa);margin-right:8px}
+.paste input{flex:1;min-width:0;background:none;border:0;outline:0;font:500 13px var(--mono)}
+.paste input::placeholder{color:var(--fa)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 14px;border-radius:9px;border:0;cursor:pointer;background:var(--lime);color:#0b1200;font:700 13px var(--body);transition:transform .2s var(--ease),box-shadow .2s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 0 0 4px #b8ff3d22}
+.btn.ghost{background:transparent;color:var(--tx);border:1px solid var(--ln2)}
+.buy{height:44px;border-radius:12px}
+
+/* tank */
+#tankWrap{position:relative;height:100svh;min-height:600px;overflow:hidden;background:radial-gradient(120% 90% at 50% 100%,#0f170c 0%,#08090a 60%)}
+#tank{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+.hud{position:absolute;left:max(16px,env(safe-area-inset-left,0px));bottom:max(18px,env(safe-area-inset-bottom,0px));z-index:5;display:flex;flex-direction:column;gap:10px;max-width:min(460px,calc(100% - 32px))}
+.coinchip{display:flex;align-items:center;gap:12px;padding:10px 14px 10px 10px;border-radius:14px;background:#0b0d0bd9;border:1px solid var(--ln2);backdrop-filter:blur(8px)}
+.coinchip img{width:42px;height:42px;border-radius:10px;object-fit:cover;background:var(--p2)}
+.coinchip .nm{font:400 26px/1 var(--display);letter-spacing:.02em}
+.coinchip .sb{font:500 12px var(--mono);color:var(--mu);margin-top:3px}
+.stats{display:flex;gap:6px;flex-wrap:wrap}
+.st{padding:7px 10px;border-radius:9px;background:#0b0d0bd9;border:1px solid var(--ln);font:500 12px var(--mono);color:var(--t2)}
+.st b{color:var(--tx);font-weight:500}
+#findForm{margin-left:0;width:100%;max-width:none}
+.st.l b{color:var(--lime)}
+.picker{position:absolute;right:max(16px,env(safe-area-inset-right,0px));top:76px;z-index:5;width:250px;max-height:calc(100% - 200px);overflow:auto;padding:8px;border-radius:14px;background:#0b0d0bd0;border:1px solid var(--ln);backdrop-filter:blur(8px);scrollbar-width:none}
+.picker::-webkit-scrollbar{display:none}
+.picker h4{font:500 11px var(--mono);letter-spacing:.14em;color:var(--mu);padding:6px 8px 8px}
+.pc{display:flex;align-items:center;gap:10px;width:100%;padding:8px;border-radius:10px;border:0;background:none;cursor:pointer;text-align:left;min-height:44px}
+.pc:hover,.pc.on{background:var(--p2)}
+.pc.on{box-shadow:inset 0 0 0 1px var(--ln2)}
+.pc img{width:28px;height:28px;border-radius:7px;object-fit:cover;background:var(--p2);flex:none}
+.pc .t{min-width:0;flex:1}
+.pc b{display:block;font:600 13.5px var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc span{font:500 11px var(--mono);color:var(--mu)}
+.feed{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:max(18px,env(safe-area-inset-bottom,0px));z-index:5;width:250px;display:flex;flex-direction:column-reverse;gap:5px;pointer-events:none}
+.ev{padding:7px 10px;border-radius:9px;background:#0b0d0bd9;border:1px solid var(--ln);font:500 11.5px var(--mono);color:var(--t2);display:flex;justify-content:space-between;gap:8px;animation:evin .4s var(--ease)}
+.ev b{color:var(--tx);font-weight:500}
+.ev.hatch{border-color:#b8ff3d66}.ev.hatch b{color:var(--lime)}
+.ev.left{opacity:.75}.ev.spore b{color:#9fd86a}
+@keyframes evin{from{opacity:0;transform:translateY(8px)}}
+.tip{position:absolute;z-index:8;pointer-events:none;padding:9px 11px;border-radius:10px;background:#0a0c0af2;border:1px solid var(--ln2);font:500 12px var(--mono);color:var(--t2);opacity:0;transition:opacity .12s;white-space:nowrap}
+.tip b{color:var(--tx);font:400 20px/1 var(--display);display:block;margin-bottom:3px}
+.load{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:4;font:500 12px var(--mono);color:var(--mu);text-align:center}
+
+/* intro */
+#intro{position:fixed;inset:0;z-index:50;background:#09080b;display:grid;place-items:center;cursor:pointer;transition:opacity .7s var(--ease)}
+#intro.gone{opacity:0;pointer-events:none}
+#intro canvas{width:min(70vmin,560px);height:min(70vmin,560px);image-rendering:pixelated;-webkit-mask-image:radial-gradient(closest-side,#000 72%,transparent);mask-image:radial-gradient(closest-side,#000 72%,transparent)}
+#intro .hint{position:absolute;bottom:max(36px,env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;font:500 12px var(--mono);letter-spacing:.24em;color:var(--fa)}
+#flash{position:fixed;inset:0;z-index:49;background:radial-gradient(circle at 50% 50%,#f4ffd9 0%,#b8ff3d 30%,transparent 70%);opacity:0;pointer-events:none}
+
+/* card */
+#card{position:fixed;inset:0;z-index:40;display:grid;place-items:center;background:#05060599;backdrop-filter:blur(4px);padding:16px}
+.cardbox{width:min(420px,100%);border-radius:18px;background:var(--p1);border:1px solid var(--ln2);padding:22px;display:flex;flex-direction:column;gap:14px;box-shadow:0 30px 80px #000a;animation:evin .35s var(--ease)}
+.cardbox canvas{width:100%;aspect-ratio:1;border-radius:12px;image-rendering:pixelated;background:#0a0d09}
+.cardbox h3{font:400 40px/1 var(--display);letter-spacing:.02em}
+.cardbox .row{display:flex;flex-wrap:wrap;gap:6px}
+.cardbox .acts{display:flex;gap:8px;flex-wrap:wrap}
+
+/* below */
+main{max-width:1120px;margin:0 auto;padding-block:90px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.k{font:500 11px var(--mono);letter-spacing:.2em;color:var(--lime)}
+h2{font:400 clamp(44px,6vw,76px)/.9 var(--display);letter-spacing:.01em;margin-top:10px;text-wrap:balance}
+.lede{color:var(--t2);max-width:60ch;margin-top:14px;font-size:16px}
+.guide{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:34px}
+.g{padding:18px;border-radius:14px;background:var(--p1);border:1px solid var(--ln)}
+.g canvas{width:72px;height:72px;image-rendering:pixelated;display:block;margin-bottom:12px}
+.g b{display:block;font:400 26px/1 var(--display);margin-bottom:6px}
+.g p{color:var(--t2);font-size:14px}
+.real{margin-top:12px;padding:18px;border-radius:14px;border:1px solid var(--ln);display:grid;grid-template-columns:1fr 1fr;gap:10px 28px;color:var(--t2);font-size:14px}
+.real div{padding-left:18px;position:relative}
+.real div::before{content:"";position:absolute;left:0;top:7px;width:7px;height:7px;background:var(--lime)}
+.real b{color:var(--tx)}
+.tok{margin-top:70px;display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:center;padding:28px;border-radius:18px;background:var(--p1);border:1px solid var(--ln)}
+.tok img{width:140px;height:140px;border-radius:22px;image-rendering:pixelated;box-shadow:0 0 50px #b8ff3d22}
+.tok h3{font:400 56px/1 var(--display)}
+.tok p{color:var(--t2);margin-top:8px;max-width:52ch}
+.ca{margin-top:14px;display:flex;align-items:center;gap:8px;max-width:540px;height:44px;padding:0 4px 0 14px;border-radius:12px;border:1px solid var(--ln2);font:500 12.5px var(--mono);color:var(--t2);cursor:pointer}
+.ca span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tok .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+footer{max-width:1120px;margin:0 auto;padding:40px max(16px,env(safe-area-inset-right,0px)) 50px max(16px,env(safe-area-inset-left,0px));display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font:500 12px var(--mono);color:var(--fa)}
+.toast{position:fixed;left:50%;bottom:24px;z-index:60;transform:translate(-50%,20px);opacity:0;background:var(--lime);color:#0b1200;font:700 13px var(--body);padding:10px 16px;border-radius:10px;transition:all .3s var(--ease);pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:900px){
+  .picker{display:none}
+  .feed{display:none}
+  .guide{grid-template-columns:1fr 1fr}
+  .real{grid-template-columns:1fr}
+}
+@media (max-width:600px){
+  .brand{font-size:24px}.brand span{display:none}
+  .buy{display:none}
+  .bar{gap:10px}
+  .coinchip .nm{font-size:22px}
+  .guide{grid-template-columns:1fr}
+  .tok{grid-template-columns:1fr;padding:20px}
+  .tok img{width:96px;height:96px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div id="intro"><canvas id="introCv" width="64" height="64"></canvas><div class="hint" id="introHint">TAP TO HATCH</div></div>
+<div id="flash"></div>
+
+<div class="bar">
+  <a class="brand" href="#"><img src="mark.png" alt=""><span>TERRARIUM</span></a>
+  <form class="paste" id="pasteForm" autocomplete="off"><span>CA</span><input id="pasteIn" placeholder="paste any pump.fun coin" spellcheck="false"><button class="btn" type="submit">Open tank</button></form>
+  <a class="btn buy" id="barBuy" href="#token">$TERRA</a>
+</div>
+
+<section id="tankWrap">
+  <canvas id="tank"></canvas>
+  <div class="load" id="load">filling the tank…</div>
+  <div class="hud" id="hud" hidden>
+    <div class="coinchip"><img id="cIcon" alt=""><div><div class="nm" id="cName">—</div><div class="sb" id="cSub">—</div></div></div>
+    <div class="stats" id="stats"></div>
+    <form class="paste" id="findForm" autocomplete="off"><span>W</span><input id="findIn" placeholder="find your creature: paste a wallet" spellcheck="false"><button class="btn" type="submit">Find</button></form>
+  </div>
+  <div class="picker" id="picker" hidden><h4>TANKS PUMPING NOW</h4><div id="pickList"></div></div>
+  <div class="feed" id="feed"></div>
+  <div class="tip" id="tip"></div>
+</section>
+
+<div id="card" hidden><div class="cardbox">
+  <canvas id="cardCv" width="96" height="96"></canvas>
+  <div><div class="k" id="cardK">CREATURE</div><h3 id="cardH">—</h3></div>
+  <div class="row" id="cardRow"></div>
+  <div class="acts"><button class="btn" id="cardSave" type="button">Save card</button><button class="btn ghost" id="cardCopy" type="button">Copy wallet</button><button class="btn ghost" id="cardClose" type="button">Close</button></div>
+</div></div>
+
+<main>
+  <div class="k">FIELD GUIDE</div>
+  <h2>Every holder hatches.</h2>
+  <p class="lede">Paste any pump.fun coin. TERRARIUM reads every wallet holding it and gives each one a creature, grown from the wallet address itself, so the same wallet always hatches the same creature in every tank. Then it watches the coin's trades and the tank changes as they land.</p>
+  <div class="guide">
+    <div class="g"><canvas data-demo="egg" width="16" height="16"></canvas><b>New buyer</b><p>A wallet buys for the first time. An egg drops into the tank and hatches.</p></div>
+    <div class="g"><canvas data-demo="grow" width="16" height="16"></canvas><b>Buys more</b><p>Food falls on its creature and it grows. Size follows the share of supply it holds.</p></div>
+    <div class="g"><canvas data-demo="shrink" width="16" height="16"></canvas><b>Sells</b><p>The creature shrinks. A full exit turns it grey and it floats out of the tank.</p></div>
+    <div class="g"><canvas data-demo="spore" width="16" height="16"></canvas><b>Dust</b><p>Wallets too small for a body drift through the tank as glowing spores. Fall out of the top and a creature sinks back into one.</p></div>
+  </div>
+  <div class="real">
+    <div><b>Holders are real.</b> Read from Solana and grouped by owner wallet. The biggest get bodies, every other wallet is counted in as a spore.</div>
+    <div><b>Pools are not creatures.</b> The bonding curve and AMM pools are left out and sit on the floor as rocks.</div>
+    <div><b>Trades are live.</b> Bonding-curve trades stream from PumpPortal as they land. Graduated coins are re-read every 20 seconds.</div>
+    <div><b>Your creature is yours.</b> Its body, colours and eyes come from your wallet address. Nobody else gets it.</div>
+  </div>
+
+  <section class="tok" id="token">
+    <img src="mark.png" alt="TERRARIUM">
+    <div>
+      <h3>$TERRA</h3>
+      <p>The home tank. Once $TERRA is live, it is the tank this page opens on, and every holder is in it.</p>
+      <div class="ca" id="caBox" hidden><span id="caTxt"></span><button class="btn" type="button">Copy</button></div>
+      <div class="acts"><a class="btn" id="aBuy" target="_blank" rel="noopener" hidden>Buy on pump.fun</a><a class="btn ghost" id="aChart" target="_blank" rel="noopener" hidden>Chart</a><a class="btn ghost" id="aX" target="_blank" rel="noopener" hidden>X</a></div>
+    </div>
+  </section>
+</main>
+<footer><span>TERRARIUM · every holder hatches</span><span id="foot">holders: Solana · trades: PumpPortal · board: Jupiter</span></footer>
+<div class="toast" id="toast"></div>
+
+<script>
+(()=>{
+const CFG=window.TERRA_CFG||{}, SNAP=window.TERRA_SNAPSHOT||null;
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const short=m=>m?m.slice(0,4)+'…'+m.slice(-4):'';
+const B58=/^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+function money(n){n=+n||0;if(n>=1e9)return'$'+(n/1e9).toFixed(2)+'B';if(n>=1e6)return'$'+(n/1e6).toFixed(n>=1e7?1:2)+'M';if(n>=1e3)return'$'+(n/1e3).toFixed(n>=1e4?0:1)+'K';return'$'+Math.round(n)}
+function tok(n){n=+n||0;return n>=1e6?(n/1e6).toFixed(n>=1e7?1:2)+'M':n>=1e3?(n/1e3).toFixed(n>=1e4?0:1)+'K':String(Math.round(n))}
+function pct(p){return p>=1?p.toFixed(2)+'%':p>=.01?p.toFixed(3)+'%':'<0.01%'}
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),1600)}
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const DPR=Math.min(2,devicePixelRatio||1);
+
+/* ---------- creature genetics: everything comes from the wallet address ---------- */
+function fnv(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0}return h}
+function rng(seed){let a=seed>>>0;return()=>{a=a+0x6D2B79F5>>>0;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+const HUES=[[184,255,61],[255,214,74],[255,138,92],[255,110,170],[178,140,255],[106,200,255],[86,240,200],[240,240,220],[255,170,60],[150,230,120]];
+const geneCache=new Map();
+function genes(addr){
+  if(geneCache.has(addr))return geneCache.get(addr);
+  const r=rng(fnv(addr)); const HW=6,H=9; const g=[];
+  for(let y=0;y<H;y++){g.push([]);for(let x=0;x<HW;x++){const center=1-Math.abs(y-4.2)/5.5, inner=x/(HW-1);g[y].push(r()<(.35+.55*center)*(.45+.6*inner)?1:0)}}
+  for(let y=2;y<7;y++)g[y][HW-1]=1; // solid spine so it's never empty
+  const eyeY=2+Math.floor(r()*3), eyeX=2+Math.floor(r()*3), eyes=r()<.18?1:2;
+  const legs=r()<.6, horns=r()<.35, col=HUES[Math.floor(r()*HUES.length)], col2=HUES[Math.floor(r()*HUES.length)];
+  const out={g,eyeY,eyeX,eyes,legs,horns,col,col2,ph:r()*6.28,sp:.6+r()*.8};
+  geneCache.set(addr,out);return out;
+}
+const spriteCache=new Map();
+function sprite(addr,state='live'){ // returns 16x14 canvas
+  const key=addr+state; if(spriteCache.has(key))return spriteCache.get(key);
+  const G=genes(addr), W=14, H=13, c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  const grid=Array.from({length:H},()=>Array(W).fill(0));
+  for(let y=0;y<9;y++)for(let i=0;i<6;i++)if(G.g[y][i]){grid[y+2][1+i]=1;grid[y+2][12-i]=1}
+  if(G.horns){grid[1][3]=1;grid[0][3]=1;grid[1][10]=1;grid[0][10]=1}
+  if(G.legs){grid[11][4]=1;grid[12][4]=1;grid[11][9]=1;grid[12][9]=1}
+  let [r1,g1,b1]=G.col,[r2,g2,b2]=G.col2;
+  if(state==='grey'){r1=g1=b1=120;r2=g2=b2=90}
+  for(let y=0;y<H;y++)for(let i=0;i<W;i++){
+    if(grid[y][i]){const t=y/H;x.fillStyle=`rgb(${r1*(1-t*.45)+r2*t*.2|0},${g1*(1-t*.45)+g2*t*.2|0},${b1*(1-t*.45)+b2*t*.2|0})`;x.fillRect(i,y,1,1)}
+    else{const n=(grid[y-1]?.[i])||(grid[y+1]?.[i])||grid[y][i-1]||grid[y][i+1];if(n){x.fillStyle='#070a05';x.fillRect(i,y,1,1)}}
+  }
+  // eyes
+  const ey=G.eyeY+2, ex=G.eyeX;
+  const eye=(px)=>{x.fillStyle='#ffffff';x.fillRect(px,ey,2,2);x.fillStyle='#050505';x.fillRect(px+ (state==='grey'?0:1),ey+1,1,1)};
+  if(G.eyes===1){eye(6)}else{eye(ex);eye(W-ex-2)}
+  spriteCache.set(key,c);return c;
+}
+function eggSprite(){const c=document.createElement('canvas');c.width=10;c.height=12;const x=c.getContext('2d');
+  const rows=["0001111000","0011111100","0111111110","0111111110","1111111111","1111111111","1111111111","1111111111","0111111110","0111111110","0011111100","0001111000"];
+  rows.forEach((r,y)=>[...r].forEach((v,i)=>{if(v==='1'){x.fillStyle=(y<4?'#fffaf0':y>8?'#d9cfb4':'#f1ead6');x.fillRect(i,y,1,1)}}));
+  x.fillStyle='#b9b08f';[[3,4],[6,6],[4,8],[7,3]].forEach(([a,b])=>x.fillRect(a,b,1,1));return c}
+const EGG=eggSprite();
+const tileCache=new Map();
+function tile(m){ // a coin with no icon gets the creature its mint address grows
+  if(tileCache.has(m))return tileCache.get(m);const k=document.createElement('canvas');k.width=k.height=32;const x=k.getContext('2d');x.imageSmoothingEnabled=false;x.fillStyle='#0e130b';x.fillRect(0,0,32,32);x.drawImage(sprite(m),2,4,28,26);const u=k.toDataURL();tileCache.set(m,u);return u}
+
+/* ---------- tank ---------- */
+const cv=$('#tank'), cx=cv.getContext('2d');
+let W=0,H=0,FLOOR=0;
+function size(){W=cv.clientWidth;H=cv.clientHeight;cv.width=W*DPR;cv.height=H*DPR;cx.setTransform(DPR,0,0,DPR,0,0);cx.imageSmoothingEnabled=false;FLOOR=H-Math.max(70,H*.12);buildScene()}
+addEventListener('resize',size);
+let scene=null;
+function buildScene(){ // static moss floor + ferns, drawn once per size
+  const s=document.createElement('canvas');s.width=Math.ceil(W/4);s.height=Math.ceil(H/4);const x=s.getContext('2d');const f=FLOOR/4, r=rng(7);
+  for(let i=0;i<s.width;i++){const h=3+Math.sin(i*.21)*1.5+Math.sin(i*.07)*2+r()*1.4;for(let y=Math.floor(f-h);y<s.height;y++){const d=(y-(f-h));x.fillStyle=d<1?'#6fbf2a':d<3?'#3f7d1f':d<6?'#24461a':y%3===i%2?'#18200f':'#141b0d';x.fillRect(i,y,1,1)}}
+  for(let k=0;k<Math.max(6,s.width/22);k++){ // ferns
+    const bx=Math.floor(r()*s.width), hgt=6+Math.floor(r()*12);
+    for(let y=0;y<hgt;y++){x.fillStyle=y%3?'#3f8a22':'#5fb32c';x.fillRect(bx+Math.round(Math.sin(y*.4)*1),Math.floor(f-y),1,1);if(y%2===0&&y>1){const w=Math.max(1,Math.floor((hgt-y)/3));x.fillStyle='#4f9d27';x.fillRect(bx-w,Math.floor(f-y),w,1);x.fillRect(bx+1,Math.floor(f-y),w,1)}}
+  }
+  for(let k=0;k<s.width/8;k++){const px=Math.floor(r()*s.width),py=Math.floor(f+2+r()*(s.height-f-2));x.fillStyle=r()<.5?'#2c3a1f':'#3b3324';x.fillRect(px,py,2,1)}
+  scene=s;
+}
+let C=[], spores=[], pellets=[], fx=[], coin=null, byOwner=new Map(), pools=[], hover=null, focus=null;
+const MAXC=innerWidth<700?140:320;
+function scaleFor(p,rank){ // pixel size of a creature from its share of supply
+  const m=innerWidth<700?.6:1, s=(1.6+Math.log10(1+p*60)*2.3+(rank<3?1:0))*m;return Math.max(1.6*m,Math.min(innerWidth<700?4:9,s));
+}
+function placeCreature(h,i,{egg=false,from=null}={}){
+  const G=genes(h.o), s=scaleFor(h.p,i), w=14*s, hh=13*s;
+  const zone=FLOOR-hh-10, top=90;
+  const c={h,o:h.o,G,s,ts:s,w,hh,x:from?from.x:40+Math.random()*(W-80),y:from?from.y:top+Math.random()*Math.max(40,zone-top),tx:0,ty:0,t:0,dir:1,egg,eggT:egg?0:-1,state:'live',a:1,rank:i,born:performance.now()};
+  pick(c);return c;
+}
+function pick(c){const top=90+ (c.ts>5?(FLOOR-90)*.35:0), bot=FLOOR-c.hh-8;c.tx=30+Math.random()*(W-60-c.w);c.ty=top+Math.random()*Math.max(20,bot-top);c.t=2+Math.random()*5}
+function populate(d,{hatch=false}={}){
+  coin=d; byOwner=new Map(); C=[]; pellets=[]; fx=[];
+  const list=d.holders.slice(0,MAXC);
+  list.forEach((h,i)=>{const c=placeCreature(h,i,{egg:hatch});if(hatch){c.eggT=0;c.delay=.15+(MAXC-i)/MAXC*1.8+Math.random()*.5}C.push(c);byOwner.set(h.o,c)});
+  d.holders.slice(MAXC).forEach(h=>byOwner.set(h.o,{h,dust:true}));
+  const ns=Math.min(innerWidth<700?220:520,Math.max(0,d.holders.length-MAXC)+Math.max(0,(d.wallets||0)-d.holders.length));
+  spores=Array.from({length:ns},()=>({x:Math.random()*W,y:80+Math.random()*(FLOOR-80),v:.08+Math.random()*.25,ph:Math.random()*6.28,r:Math.random()<.15?2:1}));
+  pools=d.pools||[]; d.listed=d.holders.length+(d.pools||[]).length;
+  renderHud();
+}
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt=Math.min(.05,(now-(frame.l||now))/1000);frame.l=now;const t=now/1000;
+  cx.clearRect(0,0,W,H);
+  // god rays
+  const g=cx.createLinearGradient(0,0,0,FLOOR);g.addColorStop(0,'rgba(184,255,61,.06)');g.addColorStop(1,'rgba(184,255,61,0)');cx.fillStyle=g;
+  for(let i=0;i<4;i++){const x0=W*(.15+i*.23)+Math.sin(t*.2+i)*20;cx.beginPath();cx.moveTo(x0,0);cx.lineTo(x0+60,0);cx.lineTo(x0+160,FLOOR);cx.lineTo(x0+40,FLOOR);cx.fill()}
+  // spores
+  for(const s of spores){s.y-=s.v;s.x+=Math.sin(t*.6+s.ph)*.15;if(s.y<70){s.y=FLOOR-4;s.x=Math.random()*W}const a=.35+.35*Math.sin(t*2+s.ph);cx.fillStyle=`rgba(184,255,61,${a})`;cx.fillRect(s.x|0,s.y|0,s.r*2,s.r*2)}
+  // floor
+  if(scene)cx.drawImage(scene,0,0,scene.width*4,scene.height*4);
+  // pools as glowing rocks on the floor
+  pools.slice(0,3).forEach((p,i)=>{const px=W*(.18+i*.32),py=FLOOR-8,rw=60+Math.min(80,p.pct*2);cx.fillStyle='#232a22';cx.fillRect(px-rw/2|0,py-14,rw|0,22);cx.fillStyle='#2f392c';cx.fillRect(px-rw/2+6|0,py-20,rw-12|0,8);cx.fillStyle='rgba(184,255,61,.5)';cx.font='16px "Jersey 10",monospace';cx.textAlign='center';cx.fillText('POOL '+pct(p.pct),px,py+4)});
+  // pellets
+  for(let i=pellets.length-1;i>=0;i--){const p=pellets[i];p.y+=p.v*dt*60;p.v+=.05;cx.fillStyle='#e3ff9e';cx.fillRect(p.x|0,p.y|0,3,3);const c=p.target;if(c&&Math.abs(p.y-(c.y+c.hh/2))<c.hh/2&&Math.abs(p.x-(c.x+c.w/2))<c.w){pellets.splice(i,1);c.ts=scaleFor(c.h.p,c.rank);burst(c.x+c.w/2,c.y+c.hh/2,'#b8ff3d',8)}else if(p.y>FLOOR)pellets.splice(i,1)}
+  // creatures
+  const sorted=C.slice().sort((a,b)=>a.s-b.s);
+  for(const c of sorted){
+    if(c.delay>0){c.delay-=dt;if(c.delay<=0)c.born=performance.now();continue}
+    c.s+=(c.ts-c.s)*Math.min(1,dt*3);c.w=14*c.s;c.hh=13*c.s;
+    if(c.eggT>=0){ // egg: falls in (new buyer) or sits where it was laid (intro wave), wobbles, cracks
+      const es=Math.max(1.4,c.s*.7);
+      if(c.fall){const ey=c.ly;if(c.y<ey){c.y=Math.min(ey,c.y+520*dt)}else c.eggT+=dt}else c.eggT+=dt;
+      const pop=Math.min(1,(performance.now()-c.born)/1000*4+.2), wob=c.eggT>.35?Math.sin(c.eggT*44)*Math.min(1,(c.eggT-.35)*3):0;
+      cx.save();cx.translate(c.x+c.w/2,c.y+6*es);cx.rotate(wob*.14);cx.scale(pop,pop);cx.drawImage(EGG,-5*es,-6*es,10*es,12*es);cx.restore();
+      if(c.eggT>1){c.eggT=-1;burst(c.x+c.w/2,c.y+6*es,'#b8ff3d',Math.min(30,10+c.s*3));pick(c)}
+      continue;
+    }
+    if(c.state==='leaving'){c.y-=.6+dt*30;c.a-=dt*.35;if(c.a<=0){C.splice(C.indexOf(c),1);continue}}
+    else if(c.state==='spore'){c.ts=.5;c.y-=dt*14;c.a-=dt*.55;if(c.a<=0){spores.push({x:c.x+c.w/2,y:c.y+c.hh/2,v:.15,ph:Math.random()*6.28,r:2});C.splice(C.indexOf(c),1);continue}}
+    else{c.t-=dt;if(c.t<=0)pick(c);const k=Math.min(1,dt*.6*c.G.sp*(c.s>6?.6:1));const dx=c.tx-c.x;c.x+=dx*k;c.y+=(c.ty-c.y)*k;if(Math.abs(dx)>2)c.dir=dx>0?1:-1}
+    const bob=Math.sin(t*2*c.G.sp+c.G.ph)*Math.max(1,c.s*.5), sq=1+Math.sin(t*4*c.G.sp+c.G.ph)*.04;
+    const spr=sprite(c.o,c.state==='leaving'?'grey':'live');
+    const isF=focus===c, isH=hover===c;
+    cx.save();cx.globalAlpha=c.a;cx.translate(c.x+c.w/2,c.y+bob+c.hh/2);cx.scale(c.dir,1);
+    if(isF||isH){cx.shadowColor='#b8ff3d';cx.shadowBlur=isF?28:16}
+    cx.drawImage(spr,-c.w/2,-c.hh/2*sq,c.w,c.hh*sq);cx.restore();
+    // shadow on floor
+    cx.fillStyle='rgba(0,0,0,.25)';const fy=FLOOR-4;cx.fillRect(c.x+c.w*.2,fy,c.w*.6*Math.max(.3,1-(fy-c.y)/H),3);
+    if(c.rank===0&&c.state==='live'){cx.fillStyle='#ffd64a';cx.font='16px "Jersey 10",monospace';cx.textAlign='center';cx.fillText('TOP HOLDER',c.x+c.w/2,c.y+bob-8)}
+    if(isF){cx.strokeStyle='#b8ff3d';cx.lineWidth=2;cx.strokeRect(c.x-6,c.y+bob-6,c.w+12,c.hh+12);cx.fillStyle='#b8ff3d';cx.font='18px "Jersey 10",monospace';cx.textAlign='center';cx.fillText('YOU',c.x+c.w/2,c.y+bob-12)}
+  }
+  // fx
+  for(let i=fx.length-1;i>=0;i--){const p=fx[i];p.x+=p.vx;p.y+=p.vy;p.vy+=.05;p.l-=dt;if(p.l<=0){fx.splice(i,1);continue}cx.globalAlpha=Math.min(1,p.l*2);cx.fillStyle=p.c;cx.fillRect(p.x|0,p.y|0,p.s,p.s)}
+  cx.globalAlpha=1;
+  // glass
+  cx.strokeStyle='rgba(239,233,216,.08)';cx.lineWidth=2;cx.strokeRect(10,70,W-20,H-80);cx.fillStyle='rgba(239,233,216,.05)';cx.fillRect(24,80,6,H*.5);cx.fillRect(36,80,2,H*.3);
+}
+requestAnimationFrame(frame);
+function burst(x,y,c,n){for(let i=0;i<n;i++){const a=Math.random()*6.28,v=1+Math.random()*3;fx.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1.5,l:.6+Math.random()*.5,c:Math.random()<.3?'#ffffff':c,s:Math.random()<.3?3:2})}}
+
+/* hover + click */
+function at(mx,my){let best=null;for(const c of C){if(c.eggT>=0||c.delay>0)continue;if(mx>c.x-4&&mx<c.x+c.w+4&&my>c.y-4&&my<c.y+c.hh+8){if(!best||c.s>best.s)best=c}}return best}
+cv.addEventListener('pointermove',e=>{const r=cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;hover=at(mx,my);const tip=$('#tip');
+  if(hover){tip.innerHTML=`<b>#${hover.rank+1} · ${short(hover.o)}</b>${pct(hover.h.p)} of supply`;tip.style.opacity=1;tip.style.left=Math.min(W-200,mx+14)+'px';tip.style.top=Math.max(70,my-56)+'px';cv.style.cursor='pointer'}else{tip.style.opacity=0;cv.style.cursor='crosshair'}});
+cv.addEventListener('pointerleave',()=>{hover=null;$('#tip').style.opacity=0});
+cv.addEventListener('click',()=>{if(hover)openCard(hover)});
+
+/* card */
+function openCard(c){
+  const k=$('#cardCv'),x=k.getContext('2d');x.imageSmoothingEnabled=false;x.fillStyle='#0a0d09';x.fillRect(0,0,96,96);
+  for(let i=0;i<40;i++){x.fillStyle=`rgba(184,255,61,${.1+Math.random()*.3})`;x.fillRect(Math.random()*96|0,Math.random()*70|0,1,1)}
+  x.fillStyle='#24461a';x.fillRect(0,80,96,16);x.fillStyle='#3f7d1f';x.fillRect(0,80,96,2);
+  x.drawImage(sprite(c.o),13,14,70,65);
+  $('#cardK').textContent=(coin?('$'+coin.symbol+' TANK'):'CREATURE')+' · RANK #'+(c.rank+1);
+  $('#cardH').textContent=short(c.o);
+  $('#cardRow').innerHTML=`<span class="st"><b>${pct(c.h.p)}</b> of supply</span><span class="st"><b>${(+c.h.a).toLocaleString(undefined,{maximumFractionDigits:0})}</b> tokens</span>`;
+  $('#card').hidden=false; $('#card').dataset.o=c.o;
+}
+$('#cardClose').onclick=()=>$('#card').hidden=true;
+$('#card').onclick=e=>{if(e.target.id==='card')$('#card').hidden=true};
+$('#cardCopy').onclick=()=>{const o=$('#card').dataset.o;navigator.clipboard?.writeText(o).then(()=>toast('Wallet copied')).catch(()=>toast(o))};
+$('#cardSave').onclick=()=>{ // 1200x1200 shareable card
+  const o=$('#card').dataset.o,c=byOwner.get(o);if(!c)return;const S=1200,k=document.createElement('canvas');k.width=k.height=S;const x=k.getContext('2d');x.imageSmoothingEnabled=false;
+  x.fillStyle='#08090a';x.fillRect(0,0,S,S);const big=$('#cardCv');x.drawImage(big,100,100,1000,1000);
+  x.fillStyle='#efe9d8';x.font='96px "Jersey 10",monospace';x.fillText(short(o),120,1060);x.fillStyle='#b8ff3d';x.font='48px "Jersey 10",monospace';x.fillText('$'+(coin?.symbol||'')+' TANK · #'+(c.rank+1)+' · '+pct(c.h.p),120,1130);
+  k.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='terrarium-'+o.slice(0,6)+'.png';document.body.appendChild(a);a.click();a.remove()});
+};
+$('#findForm').onsubmit=e=>{e.preventDefault();const w=$('#findIn').value.trim();if(!B58.test(w)){toast('That isn\'t a wallet address');return}
+  const c=byOwner.get(w);if(!c){toast('No creature: that wallet holds none of this coin');focus=null;return}
+  if(c.dust){const n=placeCreature(c.h,coin.holders.indexOf(c.h));C.push(n);byOwner.set(w,n);focus=n}else focus=c;
+  toast('Found it. Rank #'+(focus.rank+1));setTimeout(()=>openCard(focus),900)};
+
+/* ---------- hud + feed ---------- */
+function renderHud(){
+  if(!coin)return; $('#load').hidden=true; $('#hud').hidden=false;
+  const ic=$('#cIcon');ic.onerror=()=>{ic.onerror=null;ic.src=tile(coin.mint)};ic.src=coin.image||tile(coin.mint);
+  $('#cName').textContent='$'+(coin.symbol||'?');
+  $('#cSub').textContent=(coin.name||'')+' · '+short(coin.mint);
+  renderStats();
+  $$('.pc').forEach(b=>b.classList.toggle('on',b.dataset.m===coin.mint));
+  $('#pasteIn').value='';
+}
+function renderStats(){
+  const top=coin.holders[0];
+  $('#stats').innerHTML=`<span class="st l"><b>${Math.min(C.length,coin.holders.length).toLocaleString()}</b> creatures</span><span class="st"><b>${Math.max(0,(coin.wallets||0)-Math.min(C.length,coin.holders.length)).toLocaleString()}</b> spores</span>${coin.pools&&coin.pools.length?`<span class="st"><b>${pct(coin.pools.reduce((s,p)=>s+p.pct,0))}</b> in pools</span>`:''}${top?`<span class="st">top wallet <b>${pct(top.p)}</b></span>`:''}`;
+}
+function ev(kind,txt,right){const f=$('#feed'),e=document.createElement('div');e.className='ev '+kind;e.innerHTML=`<span>${txt}</span><span>${right||''}</span>`;f.prepend(e);while(f.children.length>6)f.lastChild.remove()}
+
+/* ---------- live trades ---------- */
+let ws=null,wsMint=null,wsLast=0,pollT=null,pollMint=null;
+function liveTrades(mint){
+  if(SNAP) return replay();
+  livePoll(mint);
+  if(ws&&wsMint===mint)return; try{ws&&ws.close()}catch(e){} wsMint=mint;
+  ws=new WebSocket('wss://pumpportal.fun/api/data');
+  ws.onopen=()=>ws.send(JSON.stringify({method:'subscribeTokenTrade',keys:[mint]}));
+  ws.onmessage=e=>{try{const m=JSON.parse(e.data);if(m.mint===mint)wsLast=Date.now();if(m.mint===mint&&(m.txType==='buy'||m.txType==='sell'))trade({w:m.traderPublicKey,side:m.txType,amt:+m.tokenAmount||0,sol:+m.solAmount||0})}catch(_){}};
+  ws.onclose=()=>{if(wsMint===mint)setTimeout(()=>{if(wsMint===mint){ws=null;wsMint=null;liveTrades(mint)}},3000)};
+}
+// Migrated coins don't stream trades, so the tank also re-reads its holders every 20s and turns the difference into hatches, feeds and exits.
+function livePoll(mint){if(pollMint===mint)return;pollMint=mint;clearInterval(pollT);pollT=setInterval(async()=>{
+  if(document.hidden||!coin||coin.mint!==mint||Date.now()-wsLast<60000)return;
+  try{const r=await fetch('/api/holders?mint='+encodeURIComponent(mint));if(!r.ok)return;const d=await r.json();if(coin&&coin.mint===mint)diff(d)}catch(e){}
+},20000)}
+function diff(d){
+  if(!d.holders||!d.holders.length)return;const sup=coin.supply||1,seen=new Set(d.holders.map(h=>h.o));
+  for(const h of d.holders){const c=byOwner.get(h.o);
+    if(c&&c.dust){c.h.a=h.a;c.h.p=h.p;continue}
+    const dl=h.a-(c?c.h.a:0);if(Math.abs(dl)<sup*1e-6)continue;
+    trade({w:h.o,side:dl>0?'buy':'sell',amt:Math.abs(dl)})}
+  const complete=d.wallets&&d.holders.length>=d.wallets; // every holder listed: a missing wallet really sold out
+  for(const c of C.slice()){if(c.state!=='live'||c.eggT>=0||c.delay>0||seen.has(c.o))continue;
+    trade(complete?{w:c.o,side:'sell',amt:c.h.a}:{w:c.o,side:'drop'})}
+  const nw=(d.wallets||0)-(coin.wallets||0);for(let i=0;i<Math.min(60,Math.max(0,nw));i++)spores.push({x:Math.random()*W,y:FLOOR-4,v:.08+Math.random()*.25,ph:Math.random()*6.28,r:1});
+  if(d.wallets)coin.wallets=d.wallets; if(d.pools){coin.pools=d.pools;pools=d.pools} renderStats();
+}
+function trade(tr){
+  if(!coin||!tr.w)return; const sup=coin.supply||1; let c=byOwner.get(tr.w);
+  if(tr.side==='buy'){
+    if(!c||c.dust){ // a new creature hatches
+      const h=c&&c.h?c.h:{o:tr.w,a:0,p:0}; h.a+=tr.amt;h.p=h.a/sup*100;
+      if(!c||!c.dust)coin.holders.push(h);
+      const n=placeCreature(h,coin.holders.length-1,{egg:true});n.ly=n.y;n.y=60;n.fall=true;n.eggT=0;C.push(n);byOwner.set(tr.w,n);
+      ev('hatch',`<b>hatched</b> ${short(tr.w)}`,tr.sol?tr.sol.toFixed(2)+' SOL':tok(tr.amt));
+    }else{c.h.a+=tr.amt;c.h.p=c.h.a/sup*100;pellets.push({x:c.x+c.w/2+(Math.random()-.5)*10,y:70,v:2,target:c});ev('',`<b>fed</b> ${short(tr.w)}`,tr.sol?'+'+tr.sol.toFixed(2)+' SOL':'+'+tok(tr.amt))}
+  }else if(tr.side==='drop'){
+    if(c&&!c.dust&&c.state==='live'&&c.eggT<0){c.state='spore';byOwner.set(tr.w,{h:c.h,dust:true});ev('spore',`<b>sank</b> ${short(tr.w)}`,'out of top '+(coin.listed||100))}
+  }else if(c&&!c.dust){
+    c.h.a=Math.max(0,c.h.a-tr.amt);c.h.p=c.h.a/sup*100;
+    if(c.h.a<=sup*1e-7){c.state='leaving';ev('left',`<b>left</b> ${short(tr.w)}`,'sold all')}
+    else{c.ts=scaleFor(c.h.p,c.rank);burst(c.x+c.w/2,c.y+c.hh/2,'#ff8a5c',6);ev('',`<b>shrank</b> ${short(tr.w)}`,tr.sol?'-'+tr.sol.toFixed(2)+' SOL':'-'+tok(tr.amt))}
+  }
+}
+function replay(){ // preview only: the real holder changes captured with the snapshot, in order (gaps over 6s shortened)
+  const L=(SNAP.trades||[]).map(e=>({...e}));if(!L.length)return;let acc=4000,prev=L[0].ts;L.forEach(e=>{acc+=Math.min(6000,e.ts-prev);prev=e.ts;e.pt=acc});const s0=performance.now();
+  (function step(){const el=performance.now()-s0;while(L.length&&L[0].pt<=el)trade(L.shift());if(L.length)setTimeout(step,150)})();
+}
+
+/* ---------- data ---------- */
+async function getBoard(){ if(SNAP)return SNAP.board; const r=await fetch('/api/board');if(!r.ok)throw 0;return(await r.json()).coins }
+async function getHolders(mint){ if(SNAP){if(SNAP.tank&&SNAP.tank.mint===mint)return structuredClone(SNAP.tank);throw new Error('Only the captured tank is in this preview.')}
+  const r=await fetch('/api/holders?mint='+encodeURIComponent(mint));const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Tank didn\'t answer');return j }
+let firstTank=true;
+async function openTank(mint){
+  $('#load').hidden=false;$('#load').textContent='reading every holder…';
+  try{const d=await getHolders(mint);if(!d.holders||!d.holders.length)throw new Error('No holders found for that coin.');
+    populate(d,{hatch:!firstTank});firstTank=false;liveTrades(mint);
+  }catch(e){$('#load').hidden=!!coin;toast(e.message||'Tank failed to open')}
+}
+$('#pasteForm').onsubmit=e=>{e.preventDefault();const m=$('#pasteIn').value.trim();if(!B58.test(m)){toast('Paste a Solana contract address');return}userTank=true;openTank(m);scrollTo({top:0,behavior:'smooth'})};
+
+async function boot(){
+  size();
+  let board=[];try{board=await getBoard()}catch(e){}
+  if(board.length){$('#picker').hidden=false;$('#pickList').innerHTML=board.map(b=>`<button class="pc" data-m="${esc(b.mint)}"><img src="${esc(b.icon||tile(b.mint))}" alt=""><span class="t"><b>$${esc(b.symbol)}</b><span>${money(b.mcap)} · ${money(b.vol1h)} 1h</span></span></button>`).join('');
+    $$('.pc img').forEach(i=>i.onerror=()=>{i.onerror=null;i.src=tile(i.closest('.pc').dataset.m)});
+    $$('.pc').forEach(b=>b.onclick=()=>{ if(SNAP&&b.dataset.m!==SNAP.tank.mint){toast('Only the captured tank is in this preview');return} userTank=true;openTank(b.dataset.m)})}
+  // $TERRA's tank once it has holders. Before the coin is live, the top runner's tank opens and the page keeps checking the CA.
+  if(!SNAP&&CFG.CA){try{const d=await getHolders(CFG.CA);if(d.holders&&d.holders.length)pending=d}catch(e){} if(!pending)waitForCA()}
+  if(!pending){const start=(SNAP&&SNAP.tank&&SNAP.tank.mint)||(board[0]&&board[0].mint);
+    if(!start){$('#load').textContent='no tank to open yet';return}
+    try{pending=await getHolders(start)}catch(e){$('#load').textContent=e.message||'tank failed to open'}}
+  readyIntro();
+}
+let userTank=false;
+function waitForCA(){const t=setInterval(async()=>{try{const d=await getHolders(CFG.CA);if(!d.holders||!d.holders.length)return;clearInterval(t);
+  if(userTank)return; toast('$'+(CFG.TICKER||'TERRA')+' is live. Opening its tank.'); populate(d,{hatch:true}); liveTrades(CFG.CA)}catch(e){}},20000)}
+let pending=null;
+
+/* ---------- intro: one egg cracks, the whole holder base hatches ---------- */
+const ic=$('#introCv'),ix=ic.getContext('2d');ix.imageSmoothingEnabled=false;
+const eggImg=new Image();eggImg.src='egg.png';
+let crack=0,cracking=false,introDone=false;
+function introFrame(now){
+  if(introDone)return;requestAnimationFrame(introFrame);const t=now/1000;
+  ix.clearRect(0,0,64,64);
+  const wob=cracking?Math.sin(t*60)*Math.min(1,crack*3)*2:Math.sin(t*3)*.6;
+  if(eggImg.complete&&eggImg.naturalWidth){ix.save();ix.translate(32,34);ix.rotate(wob*.03);ix.drawImage(eggImg,-30,-32,60,60);ix.restore()}
+  if(cracking){if(!introFrame.c0)introFrame.c0=now;crack=(now-introFrame.c0)/1000;
+    const k=Math.min(1,crack/1.1);ix.save();ix.globalCompositeOperation='lighter';ix.fillStyle=`rgba(184,255,61,${.15+.5*k})`;
+    for(let i=0;i<10;i++){const a=-Math.PI/2+(i-4.5)*.28,l=8+k*30;for(let d=6;d<l;d+=2){ix.fillRect(Math.round(32+Math.cos(a)*d),Math.round(20+Math.sin(a)*d),1,1)}}ix.restore();
+    if(crack>1.1)hatch()}
+}
+requestAnimationFrame(introFrame);
+function readyIntro(){ $('#introHint').textContent=pending?'TAP TO HATCH':'TAP TO ENTER'; if(reduce){hatch()} else setTimeout(()=>{if(!cracking&&!introDone)cracking=true},2600) }
+$('#intro').onclick=()=>{cracking=true};
+function hatch(){
+  if(introDone)return;introDone=true;
+  const fl=$('#flash');fl.animate([{opacity:0},{opacity:1},{opacity:0}],{duration:900,easing:'ease-out'});
+  setTimeout(()=>{$('#intro').classList.add('gone');if(pending){populate(pending,{hatch:!reduce});firstTank=false;liveTrades(pending.mint)}},250);
+}
+
+/* ---------- field guide demos ---------- */
+$$('[data-demo]').forEach(k=>{const x=k.getContext('2d');x.imageSmoothingEnabled=false;const kind=k.dataset.demo;const demoW='TERRA'+kind+'demo9x';let f=0;
+  (function loop(){f++;x.clearRect(0,0,16,16);
+    if(kind==='egg'){const p=(f%120)/120;if(p<.6){x.drawImage(EGG,3,2+Math.sin(f*.5)*(p>.4?1:0),10,12)}else{x.drawImage(sprite(demoW),1,2,14,13);if(p<.7){x.fillStyle='#b8ff3d';x.fillRect(7,0,2,2)}}}
+    else if(kind==='grow'){const p=(f%140)/140,s=.6+.4*Math.min(1,p*2);x.drawImage(sprite(demoW),8-7*s,15-13*s,14*s,13*s);if(p<.5){x.fillStyle='#e3ff9e';x.fillRect(7,p*16|0,2,2)}}
+    else if(kind==='shrink'){const p=(f%160)/160;const grey=p>.6;const s=grey?.5:1-p*.8;x.globalAlpha=grey?1-(p-.6)*2.5:1;x.drawImage(sprite(demoW,grey?'grey':'live'),8-7*s,(grey?13-(p-.6)*30:15)-13*s,14*s,13*s);x.globalAlpha=1}
+    else{for(let i=0;i<7;i++){x.fillStyle=`rgba(184,255,61,${.4+.4*Math.sin(f*.08+i)})`;x.fillRect((i*5+f*.05)%16|0,(16-((f*.15+i*9)%16))|0,1,1)}}
+    setTimeout(()=>requestAnimationFrame(loop),60)})()});
+
+/* ---------- token ---------- */
+if(CFG.CA){$('#caBox').hidden=false;$('#caTxt').textContent=CFG.CA;$('#caBox').onclick=()=>navigator.clipboard?.writeText(CFG.CA).then(()=>toast('CA copied')).catch(()=>toast(CFG.CA));
+  const b=$('#aBuy');b.hidden=false;b.href=CFG.BUY||'https://pump.fun/coin/'+CFG.CA;const c=$('#aChart');c.hidden=false;c.href=CFG.CHART||'https://gmgn.ai/sol/token/'+CFG.CA;$('#barBuy').href=b.href;$('#barBuy').target='_blank';$('#barBuy').textContent='Buy $'+(CFG.TICKER||'TERRA')}
+if(CFG.X){const x=$('#aX');x.hidden=false;x.href=CFG.X}
+
+boot();
+})();
+</script>
+</body>
+</html>
